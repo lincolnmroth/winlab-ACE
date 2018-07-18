@@ -1,9 +1,11 @@
 import io
 import socket 
 import struct
-import threading
+import datetime
 from socket_wrapper import *
 from observer import *
+
+time_format='%Y-%m-%d_%H-%M-%S'
 
 class Streamer(Observer):
     def __init__(self, sock):
