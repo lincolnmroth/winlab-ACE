@@ -13,7 +13,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 sys.path.append('/home/pi/winlab-ACE/cars/PiCar')
-from socket_wrapper import *
 from calibrationDialog import calibrationDialog
 
 if len(sys.argv)!=2:
@@ -41,6 +40,27 @@ analog_names={0:'js1-x',
         5:'RT',
         6:'DPad-x',
         7:'DPad-y'}
+
+def read_stuff(sock, stufflen):
+    chunks=io.BytesIO()
+    bytes_recd=0
+    while bytes_recd<stufflen:
+        chunk=sock.recv(min(stufflen-bytes_recd, 8192))
+        if chunk=='':
+            return -1
+        chunks.write(chunk)
+        bytes_recd=bytes_recd+len(chunk)
+    return chunks
+
+def send_stuff(sock, stuff):
+    stufflen=len(stuff)
+    totalsent=0
+    while totalsent<stufflen:
+        sent=sock.send(stuff[totalsent:])
+        if sent==0:
+            return -1
+        totalsent=totalsent+sent
+    return totalsent
 
 #we're using a bunch of global variables. Should probably fix that in the future
 global image_frame #buffer of rgb data read from client_socket_stream
