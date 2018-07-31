@@ -1,7 +1,7 @@
 import sys
 from observer import *
 
-sys.path.append('/home/pi/Sunfounder_PiCar')
+#sys.path.append('/home/pi/Sunfounder_PiCar')
 import picar
 import picar.front_wheels, picar.back_wheels
 from picar.SunFounder_PCA9685 import Servo

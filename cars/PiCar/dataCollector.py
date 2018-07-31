@@ -49,6 +49,3 @@ class DataCollector(Observer):
                 self.commands[:]=0
 
 
-
-
-
