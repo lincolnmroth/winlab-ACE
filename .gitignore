@@ -3,3 +3,6 @@
 
 #ignore config file used for calibration
 cars/PiCar/config
+
+#ignore data files
+*.npz
