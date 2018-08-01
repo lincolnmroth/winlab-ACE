@@ -1,3 +1,4 @@
+import io
 import threading
 import datetime
 import concurrent.futures
@@ -17,25 +18,28 @@ class DataCollector(Observer):
         self.observe("dc_stop", self.stop_collecting)
         self.observe("new_data", self.write)
         self.num_frames=200
-        self.imgs=np.zeros(self.num_frames, 128, 96, 3)
-        self.commands=np.zeros(self.num_frames, 2)
+        self.imgs=np.zeros((self.num_frames, 96, 128, 3))
+        self.commands=np.zeros((self.num_frames, 2))
         self.idx=0
         self.executor=concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.collect=False
 
     def start_collecting(self, flag):
+        print("start collecting")
         self.collect=True
         
     def stop_collecting(self, flag):
+        print("stop collecting")
         self.collect=False
 
     def write(self, flag):
         if self.collect==True: #THIS IS NOT THE RIGHT WAY TO DO THIS! We should have an unobserve function
             image=io.BytesIO(flag.image.getvalue())
             imsize=image.seek(0, io.SEEK_END)
+            print(self.idx)
             THR=flag.THR
             STR=flag.STR
-            imdata=np.reshape(np.fromstring(image, dtype=np.uint8), (96, 128, 3), 'C')
+            imdata=np.reshape(np.fromstring(image.getvalue(), dtype=np.uint8), (96, 128, 3), 'C')
             self.imgs[self.idx]=imdata
             self.commands[self.idx]=np.array([STR, THR])
             self.idx+=1

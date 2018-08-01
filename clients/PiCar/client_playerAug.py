@@ -13,7 +13,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 sys.path.append('/home/pi/winlab-ACE/cars/PiCar')
-from socket_wrapper import *
+#from socket_wrapper import *
 from calibrationDialog import calibrationDialog
 
 if len(sys.argv)!=2:
@@ -41,7 +41,27 @@ analog_names={0:'js1-x',
         5:'RT',
         6:'DPad-x',
         7:'DPad-y'}
+def read_stuff(sock, stufflen):
+    chunks=io.BytesIO()
+    bytes_recd=0
+    while bytes_recd<stufflen:
+        chunk=sock.recv(min(stufflen-bytes_recd, 8192))
+        if chunk=='':
+            return -1
+        chunks.write(chunk)
+        bytes_recd=bytes_recd+len(chunk)
+    return chunks
 
+def send_stuff(sock, stuff):
+    stufflen=len(stuff)
+    totalsent=0
+    while totalsent<stufflen:
+        sent=sock.send(stuff[totalsent:])
+        if sent==0:
+            return -1
+        totalsent=totalsent+sent
+    return totalsent
+ 
 #we're using a bunch of global variables. Should probably fix that in the future
 global image_frame #buffer of rgb data read from client_socket_stream
 global commands #variable to hold most recent values of STR and THR from client_socket_stream
@@ -105,10 +125,10 @@ class ClientGUI(QMainWindow):
         global command_lock
         stop_event.set() #event to stop threads
         commands_out_thread.join() #TODO FIXME this thread does NOT join no problem
-        message_buf=struct.pack("IhBB", 0, 0, 3, 1)#stream stop command
-        command_lock.acquire()
-        send_stuff(client_socket_commands, message_buf)
-        command_lock.release()
+        #message_buf=struct.pack("IhBB", 0, 0, 3, 1)#stream stop command
+        #command_lock.acquire()
+        #send_stuff(client_socket_commands, message_buf)
+        #command_lock.release()
         stream_in_thread.join() #join stream thread after sending stop command to make sure it's not hanging on a read
 
     def start_act(self):
@@ -120,10 +140,10 @@ class ClientGUI(QMainWindow):
         #TBH, initiating a stream with a command over the other socket is a little unnecessary. As long as we know what
         #order to connect, we shouldn't need to specify to start the stream
         client_socket_commands.connect((car_ip, 8005)) #connect to command socket first
-        message_buf=struct.pack("IhBB", 0, 0, 3, 0)#stream start command
-        command_lock.acquire()
-        send_stuff(client_socket_commands, message_buf)
-        command_lock.release()
+        #message_buf=struct.pack("IhBB", 0, 0, 3, 0)#stream start command
+        #command_lock.acquire()
+        #send_stuff(client_socket_commands, message_buf)
+        #command_lock.release()
         time.sleep(.5)
         client_socket_stream.connect((car_ip, 8000)) #should be able to connect after car receives the stream start command
         commands_out_thread.start()
@@ -204,12 +224,12 @@ def commands_out_process(stop_ev, js_out, commands_out_sock):
     try: 
         while not stop_ev.isSet():
             evbuf=js_out.read(8)
+            time, value, in_type, in_id=struct.unpack('IhBB', evbuf)
+            print(in_type, in_id) 
             if evbuf:
-                time, value, in_type, in_id=struct.unpack('IhBB', evbuf)
-                print(in_type, in_id) 
-                command_lock.acquire()
+                #command_lock.acquire()
                 send_stuff(commands_out_sock, evbuf) 
-                command_lock.release()
+                #command_lock.release()
                 if in_type==1 and button_names[in_id]=='xbox' and value==1:
                     stop_event.set()
     except BrokenPipeError:

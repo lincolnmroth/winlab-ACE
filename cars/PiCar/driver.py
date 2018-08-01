@@ -7,6 +7,7 @@ import datetime
 import picamera
 import threading
 
+from dataCollector import DataCollector
 from car import car
 from controller_object import ControllerObject
 from socket_wrapper import *
@@ -73,6 +74,7 @@ server_thread=threading.Thread(target=server_process, args=[tc, stream_out_sock,
 controller=ControllerObject(js_source) #controller handler
 controller.start_thread()
 streamer=Streamer(stream_out_sock)
+collector=DataCollector()
 
 
 try:
