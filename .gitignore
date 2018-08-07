@@ -4,5 +4,8 @@
 #ignore config file used for calibration
 cars/PiCar/config
 
+#ignore picar libraries
+cars/PiCar/picar/
+
 #ignore data files
 *.npz
