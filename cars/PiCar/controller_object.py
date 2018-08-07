@@ -62,7 +62,9 @@ class ControllerObject(object):
 
         self.handle_map={'js1-x':self.handleJS1_X, 'js1-y':None, 
                 'js2-x':self.handleJS2_X, 'js2-y':self.handleJS2_Y,
-                'LT':self.handleLT, 'RT':None, 'dpad-x':None, 'dpad-y':None}
+                'LT':self.handleLT, 'RT':None, 'dpad-x':None, 'dpad-y':None, 
+                'B':self.handleB, 'xbox':self.handleXbox, 'A':None, 'X':None
+                'Y':None, 'LB':None, 'RB':None, 'screen':None, 'menu':None}
         self.direction=True
         self.forceStop=False
         self.quit_flag=False
@@ -77,21 +79,12 @@ class ControllerObject(object):
             ev_buf=self.source.read(8)
             if ev_buf!=-1:
                 time, value, in_type, in_id=struct.unpack('IhBB', ev_buf.getvalue())
-                if in_type==2 and self.handle_map[analog_names[in_id]] is not None:
+                if in_type==1 and self.handle_map[button_names[in_id]] is not None:
+                    self.handle_map[button_names[in_id]](value)
+                elif (in_type==2 and self.handle_map[analog_names[in_id]] is not None):
                     self.handle_map[analog_names[in_id]](value)
-                elif in_type==1 and button_names[in_id]=='B' and value==1:
-                    self.carlock.acquire()
-                    self.direction=(self.direction==False)
-                    self.car_commands[0]=0
-                    self.forceStop=True #shoot through protection? Not sure if needed
-                    self.carlock.release()
-                elif in_type==1 and button_names[in_id]=='xbox': 
-                    self.carlock.acquire()
-                    self.quit_flag=True
-                    self.carlock.release()
-                elif in_type==3:
+                elif in_type==3 and in_id in command_names.keys():
                     Flag(command_names[in_id], {})
-                    #print("command", in_id)
 
     def stop_thread(self):
         #stops the thread. This must be called even if the thread terminates 
@@ -116,9 +109,28 @@ class ControllerObject(object):
         output=self.cam_commands
         self.camlock.release()
         return output
+
+    def registerFunction(self, input_name, function):
+        if input_name in list(button_names.keys())+list(analog_names.keys()):
+            self.handle_map[input_name]=function
+        else:
+            print("failed to add callback for "+input_name)
     
     def analog_map(self, value, outmin, outmax):
         return ((value-JS_MIN_ANALOG)/JS_ANALOG_RANGE)*(outmax-outmin)+outmin
+
+    def handleXbox(self, value):
+        self.carlock.acquire()
+        self.quit_flag=True
+        self.carlock.release()
+
+    def handleB(self, value):
+        if value==1:
+            self.carlock.acquire()
+            self.direction=(self.direction==False)
+            self.car_commands[0]=0
+            self.forceStop=True #shoot through protection? Not sure if needed
+            self.carlock.release()
 
     def handleLT(self, value):
         mapped_val=self.analog_map(value, 0, 100)
