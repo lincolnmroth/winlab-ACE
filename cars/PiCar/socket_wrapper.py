@@ -32,7 +32,7 @@ class SocketReader(object):
     def read(self, nbytes):
         try:
             res=read_stuff(self.conn, nbytes)
-            return res
+            return res.getvalue()
         except socket.error:
             print("Socket connection broken")
             return -1

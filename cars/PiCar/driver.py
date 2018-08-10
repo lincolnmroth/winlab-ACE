@@ -20,7 +20,8 @@ from picar.SunFounder_PCA9685 import Servo
 
 parser=argparse.ArgumentParser("script to drive car")
 parser.add_argument("--headless", action='store_true')
-parser.parse_args()
+args=parser.parse_args()
+
 
 #settings for pan and tilt servo
 pan_servo=Servo.Servo(1)
@@ -33,7 +34,7 @@ tilt_servo.write(90)
 time_format='%Y-%m-%d_%H-%M-%S'
 
 
-if not headless:
+if not args.headless:
     #set up sockets for commands in and stream out
     #TODO: ideally, we would have a udp stream for the video either way
     commands_server=socket.socket()
@@ -78,10 +79,10 @@ def server_process(stop_ev, sock, stream):
 carlos=car() #initialize car object
 tc=termCondition()
 
-if headless:
+if args.headless:
     controller=ControllerObject() #joystick input from device 
-    controller.register_function('X', Flag("dc_start", {}, autofire=False).fire)
-    controller.register_function('Y', Flag("dc_stop", {}, autofire=False).fire)
+    controller.registerFunction('X', Flag("dc_start", {}, autofire=False).fire)
+    controller.registerFunction('Y', Flag("dc_stop", {}, autofire=False).fire)
     controller.start_thread()
     collector=DataCollector()
 
@@ -98,7 +99,8 @@ try:
     camera=picamera.PiCamera()
     camera.resolution=(128, 96)
     camera.framerate=20
-    server_thread.start()
+    if not args.headless:
+        server_thread.start()
     time.sleep(2)
     camera.start_recording(stream, format='rgb')
     while not tc.isSet():
@@ -109,12 +111,17 @@ try:
         commands_lock.release()
         time.sleep(.01)
     camera.stop_recording()
-    server_thread.join()
+    if not args.headless:
+        server_thread.join()
 
 finally:
-    stream_out_sock.close()
-    stream_server.close()
-    controller.stop_thread()
-    commands_in_sock.close()
-    commands_server.close()
-    print("connection closed")
+    if not args.headless:
+        stream_out_sock.close()
+        stream_server.close()
+        controller.stop_thread()
+        commands_in_sock.close()
+        commands_server.close()
+        print("connection closed")
+    else:
+        controller.stop_thread()
+        print("system stopped")

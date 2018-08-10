@@ -63,7 +63,7 @@ class ControllerObject(object):
         self.handle_map={'js1-x':self.handleJS1_X, 'js1-y':None, 
                 'js2-x':self.handleJS2_X, 'js2-y':self.handleJS2_Y,
                 'LT':self.handleLT, 'RT':None, 'dpad-x':None, 'dpad-y':None, 
-                'B':self.handleB, 'xbox':self.handleXbox, 'A':None, 'X':None
+                'B':self.handleB, 'xbox':self.handleXbox, 'A':None, 'X':None,
                 'Y':None, 'LB':None, 'RB':None, 'screen':None, 'menu':None}
         self.direction=True
         self.forceStop=False
@@ -78,7 +78,7 @@ class ControllerObject(object):
         while self.stop_event.isSet()==False and self.quit_flag==False:
             ev_buf=self.source.read(8)
             if ev_buf!=-1:
-                time, value, in_type, in_id=struct.unpack('IhBB', ev_buf.getvalue())
+                time, value, in_type, in_id=struct.unpack('IhBB', ev_buf) #TODO FIXME
                 if in_type==1 and self.handle_map[button_names[in_id]] is not None:
                     self.handle_map[button_names[in_id]](value)
                 elif (in_type==2 and self.handle_map[analog_names[in_id]] is not None):
@@ -111,7 +111,7 @@ class ControllerObject(object):
         return output
 
     def registerFunction(self, input_name, function):
-        if input_name in list(button_names.keys())+list(analog_names.keys()):
+        if input_name in list(button_names.values()) or input_name in list(analog_names.values()):
             self.handle_map[input_name]=function
         else:
             print("failed to add callback for "+input_name)
