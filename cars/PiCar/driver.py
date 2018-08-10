@@ -6,6 +6,7 @@ import time
 import datetime
 import picamera
 import threading
+import argparse
 
 from dataCollector import DataCollector
 from car import car
@@ -15,6 +16,11 @@ from observer import *
 from streamer import *
 sys.path.append('/home/pi/Sunfounder_PiCar')
 from picar.SunFounder_PCA9685 import Servo
+
+
+parser=argparse.ArgumentParser("script to drive car")
+parser.add_argument("--headless", action='store_true')
+parser.parse_args()
 
 #settings for pan and tilt servo
 pan_servo=Servo.Servo(1)
@@ -26,15 +32,18 @@ tilt_servo.write(90)
 
 time_format='%Y-%m-%d_%H-%M-%S'
 
-#set up sockets for commands in and stream out
-commands_server=socket.socket()
-stream_server=socket.socket()
-commands_server.bind(('', 8005))
-stream_server.bind(('', 8000))
-commands_server.listen(0)
-stream_server.listen(0)
-(commands_in_sock, address)=commands_server.accept()
-(stream_out_sock, address)=stream_server.accept()
+
+if not headless:
+    #set up sockets for commands in and stream out
+    #TODO: ideally, we would have a udp stream for the video either way
+    commands_server=socket.socket()
+    stream_server=socket.socket()
+    commands_server.bind(('', 8005))
+    stream_server.bind(('', 8000))
+    commands_server.listen(0)
+    stream_server.listen(0)
+    (commands_in_sock, address)=commands_server.accept()
+    (stream_out_sock, address)=stream_server.accept()
 
 #set up some global variables
 stream=io.BytesIO()
@@ -69,12 +78,20 @@ def server_process(stop_ev, sock, stream):
 carlos=car() #initialize car object
 tc=termCondition()
 
-js_source=SocketReader(commands_in_sock) #joystick input from socket
-server_thread=threading.Thread(target=server_process, args=[tc, stream_out_sock, stream])
-controller=ControllerObject(js_source) #controller handler
-controller.start_thread()
-streamer=Streamer(stream_out_sock)
-collector=DataCollector()
+if headless:
+    controller=ControllerObject() #joystick input from device 
+    controller.register_function('X', Flag("dc_start", {}, autofire=False).fire)
+    controller.register_function('Y', Flag("dc_stop", {}, autofire=False).fire)
+    controller.start_thread()
+    collector=DataCollector()
+
+else:
+    js_source=SocketReader(commands_in_sock) #joystick input from socket
+    server_thread=threading.Thread(target=server_process, args=[tc, stream_out_sock, stream])
+    controller=ControllerObject(js_source) #controller handler
+    controller.start_thread()
+    streamer=Streamer(stream_out_sock)
+    collector=DataCollector()
 
 
 try:

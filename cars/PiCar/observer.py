@@ -19,6 +19,7 @@ class Flag(object):
             self.fire()
 
     def fire(self):
+        print(self.name+"delayed fire")
         if self.name in Observer.observables.keys():
             for cb in Observer.observables[self.name]:
                 cb(self)
