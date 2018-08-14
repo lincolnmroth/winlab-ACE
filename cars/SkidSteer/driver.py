@@ -69,8 +69,12 @@ collector=DataCollector()
 
 
 try:
+camera=picamera.PiCamera()
+    camera.resolution=(128, 96)
+    camera.framerate=20
     server_thread.start()
     time.sleep(2)
+    camera.start_recording(stream, format='rgb')
     while not tc.isSet():
         commands=controller.carpoll() #get commands from controller
         carlos.go(commands[1], commands[0]) #tell car to execute commands
@@ -78,7 +82,7 @@ try:
         car_commands=commands #put commands in shared variable so they can be read by other thread
         commands_lock.release()
         time.sleep(.01)
-
+    camera.stop_recording()
     server_thread.join()
 
 finally:
