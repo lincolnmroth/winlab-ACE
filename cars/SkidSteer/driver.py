@@ -69,7 +69,7 @@ collector=DataCollector()
 
 
 try:
-camera=picamera.PiCamera()
+    camera=picamera.PiCamera()
     camera.resolution=(128, 96)
     camera.framerate=20
     server_thread.start()
