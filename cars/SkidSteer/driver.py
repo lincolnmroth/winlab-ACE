@@ -1,6 +1,6 @@
 import sys
 import io
-import socket 
+import socket
 import struct
 import time
 import datetime
@@ -13,16 +13,7 @@ from controller_object import ControllerObject
 from socket_wrapper import *
 from observer import *
 from streamer import *
-sys.path.append('/home/pi/Sunfounder_PiCar')
-from picar.SunFounder_PCA9685 import Servo
 
-#settings for pan and tilt servo
-pan_servo=Servo.Servo(1)
-tilt_servo=Servo.Servo(2)
-pan_servo.offset=10
-tilt_servo.offset=0
-pan_servo.write(90)
-tilt_servo.write(90)
 
 time_format='%Y-%m-%d_%H-%M-%S'
 
