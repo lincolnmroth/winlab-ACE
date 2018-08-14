@@ -71,7 +71,6 @@ collector=DataCollector()
 try:
     server_thread.start()
     time.sleep(2)
-    camera.start_recording(stream, format='rgb')
     while not tc.isSet():
         commands=controller.carpoll() #get commands from controller
         carlos.go(commands[1], commands[0]) #tell car to execute commands
