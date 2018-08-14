@@ -14,7 +14,7 @@ PAN_ANGLE_MAX=170
 TILT_ANGLE_MIN=70
 TILT_ANGLE_MAX=150
 
-command_names={0: 'start_stream', 
+command_names={0: 'start_stream',
         1: 'stop_stream',
         2: 'calib_start',
         3: 'calib_stop',
@@ -47,9 +47,9 @@ analog_names={0:'js1-x',
 class ControllerObject(object):
 
     def __init__(self, source=None):
-        if source==None: 
+        if source==None:
             joystick_file='/dev/input/js0'
-            self.source=open(joystick_file, 'rb') 
+            self.source=open(joystick_file, 'rb')
             print("opened joystick device file")
         else:
             self.source=source
@@ -57,10 +57,10 @@ class ControllerObject(object):
         self.proc_thread=threading.Thread(target=self.proc_thread)
         self.carlock=threading.Lock()
         self.camlock=threading.Lock()
-        self.car_commands=[0, 90]
+        self.car_commands=[0, 0]
         self.cam_commands=[90, 90]
 
-        self.handle_map={'js1-x':self.handleJS1_X, 'js1-y':None, 
+        self.handle_map={'js1-x':self.handleJS1_X, 'js1-y':None,
                 'js2-x':self.handleJS2_X, 'js2-y':self.handleJS2_Y,
                 'LT':self.handleLT, 'RT':None, 'dpad-x':None, 'dpad-y':None}
         self.direction=True
@@ -85,7 +85,7 @@ class ControllerObject(object):
                     self.car_commands[0]=0
                     self.forceStop=True #shoot through protection? Not sure if needed
                     self.carlock.release()
-                elif in_type==1 and button_names[in_id]=='xbox': 
+                elif in_type==1 and button_names[in_id]=='xbox':
                     self.carlock.acquire()
                     self.quit_flag=True
                     self.carlock.release()
@@ -94,10 +94,10 @@ class ControllerObject(object):
                     #print("command", in_id)
 
     def stop_thread(self):
-        #stops the thread. This must be called even if the thread terminates 
+        #stops the thread. This must be called even if the thread terminates
         self.stop_event.set()
         self.proc_thread.join()
-            
+
     def carpoll(self):
         #returns a list with [thr, str] for car
         self.carlock.acquire()
@@ -116,24 +116,22 @@ class ControllerObject(object):
         output=self.cam_commands
         self.camlock.release()
         return output
-    
+
     def analog_map(self, value, outmin, outmax):
         return ((value-JS_MIN_ANALOG)/JS_ANALOG_RANGE)*(outmax-outmin)+outmin
 
     def handleLT(self, value):
-        mapped_val=self.analog_map(value, 0, 100)
+        mapped_val=self.analog_map(value, -255, 255)
         if abs(mapped_val)<10:
             thr=0
         else:
-            thr=int(mapped_val) if self.direction else (-1)*int(mapped_val) 
+            thr=int(mapped_val)
         self.carlock.acquire()
         self.car_commands[0]=thr
         self.carlock.release()
 
     def handleJS1_X(self, value):
-        mapped_val=self.analog_map(value, 50, 130)
-        if abs(mapped_val-90)<3:
-            mapped_val=90
+        mapped_val=self.analog_map(value, -255, 255)
         self.carlock.acquire()
         self.car_commands[1]=int(mapped_val)
         self.carlock.release()
@@ -149,4 +147,3 @@ class ControllerObject(object):
         self.camlock.acquire()
         self.cam_commands[1]=int(mapped_val)
         self.camlock.release()
-
